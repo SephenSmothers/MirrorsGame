@@ -151,8 +151,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   size: {x: 10, y: 10}
   mazestart: 0
-  room: {fileID: 2220180599497833703, guid: 19a955b53ffcef64b974f8d57170c84d, type: 3}
-  offset: {x: 6, y: 6}
+  room: {fileID: 1784280370692591160, guid: 8dfa5abc3c772a84881fe5d051679ccd, type: 3}
+  offset: {x: 15, y: 15}
 --- !u!4 &106363434
 Transform:
   m_ObjectHideFlags: 0
