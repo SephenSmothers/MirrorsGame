@@ -44,16 +44,16 @@ namespace StarterAssets
 		[Tooltip("What layers the character uses as ground")]
 		public LayerMask GroundLayers;
 
-		[Header("Cinemachine")]
-		[Tooltip("The follow target set in the Cinemachine Virtual Camera that the camera will follow")]
-		public GameObject CinemachineCameraTarget;
+		[Header("Camera")]
+		//[Tooltip("The follow target set in the Cinemachine Virtual Camera that the camera will follow")]
+		public GameObject CameraTarget;
 		[Tooltip("How far in degrees can you move the camera up")]
 		public float TopClamp = 90.0f;
 		[Tooltip("How far in degrees can you move the camera down")]
 		public float BottomClamp = -90.0f;
 
-		// cinemachine
-		private float _cinemachineTargetPitch;
+		// camera
+		private float TargetPitch;
 
 		// player
 		private float _speed;
@@ -65,13 +65,27 @@ namespace StarterAssets
 		private float _jumpTimeoutDelta;
 		private float _fallTimeoutDelta;
 
-	
+		// NetworkedData
+
+		[SerializeField]
+		private NetworkVariable<Vector3> ServerPosition = new NetworkVariable<Vector3>();
+
+		[SerializeField]
+		private NetworkVariable<Quaternion> ServerRotation = new NetworkVariable<Quaternion>();
+
+        [SerializeField]
+        private NetworkVariable<Vector3> ServerCameraPosition = new NetworkVariable<Vector3>();
+
+        [SerializeField]
+        private NetworkVariable<Quaternion> ServerCameraRotation = new NetworkVariable<Quaternion>();
+
+
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
-		private PlayerInput _playerInput;
+        private PlayerInput _playerInput;
 #endif
 		private CharacterController _controller;
 		private StarterAssetsInputs _input;
-		private GameObject _mainCamera;
+		//private GameObject _mainCamera;
 
 		private const float _threshold = 0.01f;
 
@@ -90,10 +104,10 @@ namespace StarterAssets
 		private void Awake()
 		{
 			// get a reference to our main camera
-			if (_mainCamera == null)
-			{
-				_mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-			}
+			//if (_mainCamera == null)
+			//{
+			//	_mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+			//}
 		}
 
 		private void Start()
@@ -113,14 +127,25 @@ namespace StarterAssets
 
 		private void Update()
 		{
-			JumpAndGravity();
-			GroundedCheck();
-			Move();
+            if (IsClient && IsOwner)
+			{
+                Move();
+                JumpAndGravity();
+                GroundedCheck();
+            }
+
+            if (OwnerClientId == 0)
+            {
+				UpdateServer();
+            }
 		}
 
 		private void LateUpdate()
 		{
-			CameraRotation();
+			if(IsClient && IsOwner)
+			{
+				CameraRotation();
+			}
 		}
 
 		public void GroundedCheck()
@@ -138,17 +163,18 @@ namespace StarterAssets
 				//Don't multiply mouse input by Time.deltaTime
 				float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
 				
-				_cinemachineTargetPitch += _input.look.y * RotationSpeed * deltaTimeMultiplier;
+				TargetPitch += _input.look.y * RotationSpeed * deltaTimeMultiplier;
 				_rotationVelocity = _input.look.x * RotationSpeed * deltaTimeMultiplier;
 
 				// clamp our pitch rotation
-				_cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
+				TargetPitch = ClampAngle(TargetPitch, BottomClamp, TopClamp);
 
 				// Update Cinemachine camera target pitch
-				CinemachineCameraTarget.transform.localRotation = Quaternion.Euler(_cinemachineTargetPitch, 0.0f, 0.0f);
+				CameraTarget.transform.localRotation = Quaternion.Euler(TargetPitch, 0.0f, 0.0f);
 
 				// rotate the player left and right
 				transform.Rotate(Vector3.up * _rotationVelocity);
+				CameraTarget.transform.position = new Vector3(transform.position.x, transform.position.y + 1.5f, transform.position.z);
 			}
 		}
 
@@ -197,7 +223,10 @@ namespace StarterAssets
 
 			// move the player
 			_controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
-		}
+
+            //UpdateClientPositionServerRpc(_controller.transform.position, _controller.transform.rotation);
+            UpdateClientPositionServerRpc(transform.position, transform.rotation);
+        }
 
         public void JumpAndGravity()
 		{
@@ -264,6 +293,25 @@ namespace StarterAssets
 
 			// when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
 			Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
+		}
+
+		private void UpdateServer()
+		{
+			transform.position = ServerPosition.Value;
+		    transform.rotation = ServerRotation.Value;
+
+			CameraTarget.transform.position = ServerCameraPosition.Value;
+            CameraTarget.transform.localRotation = ServerCameraRotation.Value;
+        }
+
+		[ServerRpc]
+		void UpdateClientPositionServerRpc(Vector3 _position, Quaternion _rotation)
+		{
+			ServerPosition.Value = _position;
+			ServerRotation.Value = _rotation;
+
+			ServerCameraPosition.Value = CameraTarget.transform.position;
+			ServerCameraRotation.Value = CameraTarget.transform.localRotation;
 		}
 	}
 }

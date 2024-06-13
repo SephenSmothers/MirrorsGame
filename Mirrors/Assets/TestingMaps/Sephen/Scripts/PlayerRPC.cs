@@ -1,16 +1,43 @@
-using StarterAssets;
-using System.Collections;
-using System.Collections.Generic;
-using System.Globalization;
 using Unity.Netcode;
 using UnityEngine;
+using TerrorForage.Core.Singleton;
 
-namespace WorldNetManager
+public class PlayerRPC : Singleton<PlayerRPC>
 {
 
+    private NetworkVariable<int> PlayersInGameCount = new NetworkVariable<int>();
 
-    public class PlayerRPC : NetworkBehaviour
+    public int PlayersInGame
     {
+        get
+        {
+            return PlayersInGameCount.Value;
+        }
+    }
+
+    private void Start()
+    {
+        NetworkManager.Singleton.OnClientConnectedCallback += (id) =>
+        {
+            if (IsServer)
+            {
+                Debug.Log($"{id} Just Connected");
+                PlayersInGameCount.Value++;
+            }
+        };
+
+        NetworkManager.Singleton.OnClientDisconnectCallback += (id) =>
+        {
+            if (IsServer)
+            {
+                Debug.Log($"{id} Just Disconnected");
+                PlayersInGameCount.Value--;
+            }
+        };
+    }
+
+
+    /*
         [SerializeField]
         FirstPersonController Player;
 
@@ -34,14 +61,14 @@ namespace WorldNetManager
         void SubmitPositionRequestRpc(RpcParams rpcParams = default)
         {
 
-            //Player.Move();
-            //Player.JumpAndGravity();
-            //Player.GroundedCheck();
-            //Player.CameraRotation();
-            //Position.Value = Player.transform.position;
-            var randomPosition = GetRandomPositionOnPlane();
-            transform.position = randomPosition;
-            Position.Value = randomPosition;
+            Player.Move();
+            Player.JumpAndGravity();
+            Player.GroundedCheck();
+            Player.CameraRotation();
+            Position.Value = Player.transform.position;
+            //var randomPosition = GetRandomPositionOnPlane();
+            //transform.position = randomPosition;
+            //Position.Value = randomPosition;
         }
 
         static Vector3 GetRandomPositionOnPlane()
@@ -53,5 +80,6 @@ namespace WorldNetManager
         {
             transform.position = Position.Value;
         }
-    }
+    */
 }
+

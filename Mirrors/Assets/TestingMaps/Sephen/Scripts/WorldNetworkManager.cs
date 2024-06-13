@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -51,20 +49,20 @@ namespace WorldNetManager
 
         void SubmitNewPosition()
         {
-            if (GUILayout.Button(m_NetworkManager.IsServer ? "Move" : "Request Position Change"))
-            {
-                if (m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
-                {
-                    foreach (ulong uid in m_NetworkManager.ConnectedClientsIds)
-                        m_NetworkManager.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<PlayerRPC>().Move();
-                }
-                else
-                {
-                    var playerObject = m_NetworkManager.SpawnManager.GetLocalPlayerObject();
-                    var player = playerObject.GetComponent<PlayerRPC>();
-                    player.Move();
-                }
-            }
+            //if (GUILayout.Button(m_NetworkManager.IsServer ? "Move" : "Request Position Change"))
+            //{
+            //    if (m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
+            //    {
+            //        foreach (ulong uid in m_NetworkManager.ConnectedClientsIds)
+            //          //  m_NetworkManager.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<PlayerRPC>().Move();
+            //    }
+            //    else
+            //    {
+            //        var playerObject = m_NetworkManager.SpawnManager.GetLocalPlayerObject();
+            //        var player = playerObject.GetComponent<PlayerRPC>();
+            //       // player.Move();
+            //    }
+            //}
         }
     }
 
